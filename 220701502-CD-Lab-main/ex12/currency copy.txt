@@ -1,0 +1,283 @@
+main activity
+package com.example.currencyconverter
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.example.currencyconverter.ui.theme.CurrencyConverterTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            CurrencyConverterTheme {
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    CurrencyConverterUI()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CurrencyConverterUI() {
+    var amountInput by remember { mutableStateOf("") }
+    var fromCurrency by remember { mutableStateOf("USD") }
+    var toCurrency by remember { mutableStateOf("INR") }
+    var result by remember { mutableStateOf("") }
+
+    val currencies = listOf("USD", "INR", "EUR")
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        OutlinedTextField(
+            value = amountInput,
+            onValueChange = { amountInput = it },
+            label = { Text("Enter amount") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        CurrencyDropdown("From", currencies, fromCurrency) { fromCurrency = it }
+        Spacer(modifier = Modifier.height(8.dp))
+        CurrencyDropdown("To", currencies, toCurrency) { toCurrency = it }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                val amount = amountInput.toDoubleOrNull()
+                if (amount != null) {
+                    val rate = getExchangeRate(fromCurrency, toCurrency)
+                    val converted = amount * rate
+                    result = "Converted Amount: %.2f $toCurrency".format(converted)
+                } else {
+                    result = "Invalid input"
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Convert")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = result)
+    }
+}
+
+@Composable
+fun CurrencyDropdown(label: String, items: List<String>, selectedItem: String, onItemSelected: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Text(text = label)
+        Box {
+            OutlinedButton(onClick = { expanded = true }) {
+                Text(text = selectedItem)
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                items.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(item) },
+                        onClick = {
+                            onItemSelected(item)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun getExchangeRate(from: String, to: String): Double {
+    return when (from) {
+        "USD" -> when (to) {
+            "INR" -> 83.0
+            "EUR" -> 0.91
+            else -> 1.0
+        }
+        "INR" -> when (to) {
+            "USD" -> 0.012
+            "EUR" -> 0.011
+            else -> 1.0
+        }
+        "EUR" -> when (to) {
+            "USD" -> 1.1
+            "INR" -> 91.0
+            else -> 1.0
+        }
+        else -> 1.0
+    }
+}
+
+
+
+
+android manifest
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.currencyconverter">
+
+    <application
+        android:allowBackup="true"
+        android:label="Currency Converter"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.CurrencyConverter">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
+
+
+activitymain.xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/enter_amount"
+        android:textSize="18sp" />
+
+    <EditText
+        android:id="@+id/amountEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/enter_amount"
+        android:minHeight="48dp"
+        android:padding="12dp"
+        android:autofillHints="postalAddress"
+        android:inputType="numberDecimal" />
+
+    <Button
+        android:id="@+id/convertButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/convert"
+        android:layout_marginTop="16dp" />
+</LinearLayout>
+
+
+
+strings.xml
+<resources>
+    <string name="app_name">Currency Converter</string>
+    <string name="enter_amount">Enter Amount</string>
+    <string name="convert">Convert</string>
+
+</resources>
+
+
+
+themes.xml
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.CurrencyConverter" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+    </style>
+</resources>
+
+
+
+
+colors.xml
+<resources>
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="teal_200">#03DAC5</color>
+    <color name="teal_700">#018786</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
+
+
+
+build gradle
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "com.example.currencyconverter"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.example.currencyconverter"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        compose = true
+    }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    implementation("com.google.android.material:material:1.11.0")
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+}
